@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+	<title>Document</title>
+	<style type="text/css">
+		* {
+			margin: 0px;
+			padding: 0px
+		}
+
+		.audiost {
+			position: absolute;
+			z-index: 999;
+			right: '10';
+		}
+
+		#qq {
+			position: absolute;
+			float: left;
+			width: 40%;
+			height: 4%;
+			bottom: 2%;
+			left: 30%;
+			z-index: 9999;
+		}
+	</style>
+</head>
+
+<body>
+	<script src="https://pchen66.github.io/js/three/three.min.js"></script>
+	<script src="https://pchen66.github.io/js/panolens/panolens.min.js"></script>
+	<script src="https://pchen66.github.io/js/three/three.min.js"></script>
+	<script type="module">
+		// 이런식으로 하나하나 받아오기
+		var img = window.parent.document.getElementById('img').innerHTML;
+		var posotion = window.parent.document.getElementById('position').innerHTML;
+
+		var viewer = new PANOLENS.Viewer({
+			output: 'console',
+			cameraFov: 80,
+			autoHideInfospot: false,
+			autoRotate: true,
+			autoRotateSpeed: 0.3,
+			controlBar: false
+		});
+		var curves = [], easings = [];
+
+		curves = getPropertyArray(TWEEN.Easing);
+		// Focus tweening parameter
+		var parameters = {
+			duration: 1000,
+			curve: 'Exponential',
+			easing: 'Out',
+			iterative: false
+		};
+
+		// ===== ===== ===== 화면 이동 ===== ===== ===== 
+		var state = true;
+		var autoKey = sessionStorage.getItem("autoKey");
+
+		document.getElementById('autoCon').addEventListener('click', function () {
+			state = !state;
+			//console.log(state);
+			// 요러케는 또 된다.... (화면 오른쪽 상단 버튼)
+			if (!state) {
+				viewer.OrbitControls.autoRotate = false;
+			} else {
+				viewer.OrbitControls.autoRotate = true;
+			}
+		})
+
+		// 바뀐 값이 실시간 반영 안된다....ㅠㅠㅠㅠ 위에 저렇게는 된다...
+		if (autoKey == 'true') {
+			viewer.OrbitControls.autoRotate = true;
+		} else {
+			viewer.OrbitControls.autoRotate = false;
+		}
+		// ===== ===== ===== 화면 이동 ===== ===== ===== 
+
+		let panorama = new PANOLENS.ImagePanorama(img);
+
+		let infospot = new PANOLENS.Infospot(300, PANOLENS.DataImage.Info);
+		var x = posotion.split(',')[0];
+		var y = posotion.split(',')[1];
+		var z = posotion.split(',')[2];
+		infospot.position.set(x, y, z);
+		infospot.addHoverText('텍스트');
+		//infospot.addEventListener('click', onFocus);
+		panorama.add(infospot);
+
+		viewer.getCamera().fov = 60;
+		viewer.getCamera().updateProjectionMatrix();
+		viewer.getControl().rotateSpeed *= -1;
+		viewer.getControl().momentumScalingFactor *= -1;
+		viewer.onWindowResize(window.innerWidth, window.innerHeight);
+		// 카메라 줌 레벨
+		viewer.setCameraFov(60);
+		viewer.reverseDraggingDirection();
+		viewer.renderer.sortObjects = true;
+		viewer.add(panorama);
+
+		// 스팟 포커스
+		function getPropertyArray(object) {
+			var array = [];
+			for (var name in object) {
+				array.push(name);
+			}
+			return array;
+		}
+
+		function iterativeFocus(enabled) {
+			if (!enabled) {
+				clearTimeout(timerId);
+				return;
+			}
+			onFocus.call(panorama.children[index++]);
+			if (index === panorama.children.length) {
+				index = 0;
+			}
+			timerId = setTimeout(iterativeFocus.bind(this, enabled), parameters.duration + 500);
+		}
+		function onFocus() {
+			this.focus(parameters.duration, TWEEN.Easing[parameters.curve][parameters.easing]);
+		}
+	</script>
+	
+	<div class="audiost">
+		<audio id='player' autoplay controls loop>
+			<source src='./bensound-anewbeginning.mp3' type='audio/mp3' />
+		</audio>
+		<div className='audioclass'>
+		</div>
+		<div>
+			<span class="material-icons-outlined" id="autoCon">
+				play_arrow
+			</span>
+		</div>
+	</div>
+</body>
+
+</html>
